@@ -1,0 +1,29 @@
+{{ bos_token }}
+{%- set loop_messages = messages -%}
+{%- if messages and messages[0]['role'] in ['system', 'developer'] -%}
+    {{ '<|turn>system\n' + (messages[0]['content'] | trim) + '<turn|>\n' }}
+    {%- set loop_messages = messages[1:] -%}
+{%- endif -%}
+{%- for message in loop_messages -%}
+    {%- set role = 'model' if message['role'] == 'assistant' else message['role'] -%}
+    {{ '<|turn>' + role + '\n' }}
+    {%- if message['content'] is string -%}
+        {{ message['content'] | trim }}
+    {%- elif message['content'] is iterable -%}
+        {%- for item in message['content'] -%}
+            {%- if item['type'] == 'image' -%}
+                {{ '<|image|>' }}
+            {%- elif item['type'] == 'video' -%}
+                {{ '<|video|>' }}
+            {%- elif item['type'] == 'audio' -%}
+                {{ '<|audio|>' }}
+            {%- elif item['type'] == 'text' -%}
+                {{ item['text'] | trim }}
+            {%- endif -%}
+        {%- endfor -%}
+    {%- endif -%}
+    {{ '<turn|>\n' }}
+{%- endfor -%}
+{%- if add_generation_prompt -%}
+    {{ '<|turn>model\n' + '<|channel>' + 'tho' + 'ught\n' + '<channel|>' }}
+{%- endif -%}
